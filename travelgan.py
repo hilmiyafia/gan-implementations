@@ -25,7 +25,7 @@ class Generator(torch.nn.Module):
         return self.layers(x)
 
 class Critic(torch.nn.Module):
-    def __init__(self, count):
+    def __init__(self):
         super().__init__()
         self.layers = torch.nn.Sequential(
             spectral_norm(torch.nn.Conv2d(3, 32, 7, 2, 3)),
@@ -44,7 +44,7 @@ class Critic(torch.nn.Module):
         return self.layers(x)
 
 class Encoder(torch.nn.Module):
-    def __init__(self, count):
+    def __init__(self):
         super().__init__()
         self.layers = torch.nn.Sequential(
             torch.nn.Conv2d(3, 32, 7, 2, 3),
