@@ -100,8 +100,9 @@ class TraVeLGAN(pytorch_lightning.LightningModule):
         real_vector = real_latents[0] - real_latents[1]
         fake_mag = fake_vector.square().sum(1).sqrt()
         real_mag = real_vector.square().sum(1).sqrt()
+        cos = (fake_vector * real_vector).sum(1) / (fake_mag * real_mag)
         loss_fake = (self.critic(fake) - 1).square().mean()
-        loss_travel = (fake_vector - real_vector).square().mean()
+        loss_travel = (cos - 1).square().mean()
         loss_fake_mag = (1 - fake_mag).clamp(min=0).mean()
         loss_real_mag = (1 - real_mag).clamp(min=0).mean()
         self.log("m_fake", loss_fake, True)
