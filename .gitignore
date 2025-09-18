@@ -2,3 +2,6 @@ __pycache__
 lightning_logs
 StarGAN
 TraVeLGAN
+InfoGAN 8 16
+InfoGAN 16 32
+StyleGAN
