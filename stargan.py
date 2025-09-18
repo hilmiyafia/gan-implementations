@@ -66,9 +66,11 @@ class StarGAN(pytorch_lightning.LightningModule):
     def training_step(self, batch, batch_idx):
         with torch.no_grad():
             device = batch[0].device
-            c_source = [i for i, b in enumerate(batch) for _ in range(b.shape[0])]
+            c_source = [
+                i for i, b in enumerate(batch) for _ in range(b.shape[0])]
             c_source = torch.LongTensor(c_source).to(device)
-            c_target = torch.randint(0, len(batch) - 1, c_source.shape[0], device=device)
+            c_target = torch.randint(0, len(batch) - 1, (c_source.shape[0],))
+            c_target = c_target.to(device)
             c_target[c_target >= c_source] += 1
             batch = torch.concat(batch)
         if batch_idx % 2 == 0:
@@ -105,9 +107,9 @@ class StarGAN(pytorch_lightning.LightningModule):
         opt.step()
     def validation_step(self, batch, batch_index):
         device = batch[0].device
-        c_target = torch.ones(batch[0].shape[0], device=device, dtype=torch.int64)
-        output = torch.stack((batch[0], self.model(batch[0], c_target)), 3)
-        output = torchvision.utils.make_grid(output.flatten(2, 3), 4, 0) / 2 + 0.5
+        c_target = torch.ones(batch[0].shape[0], dtype=torch.int64).to(device)
+        output = torch.concat((batch[0], self.model(batch[0], c_target)), 2)
+        output = torchvision.utils.make_grid(output, 4, 0) / 2 + 0.5
         output = (output * 255).clamp(min=0, max=255).to(torch.uint8)
         os.makedirs("StarGAN", exist_ok=True)
         path = f"StarGAN/Image {self.global_step}.png"
