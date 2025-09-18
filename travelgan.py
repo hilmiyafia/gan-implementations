@@ -7,7 +7,7 @@ from blocks import ResidualBlock, DownBlock, UpBlock
 from torch.nn.utils import spectral_norm
 
 class Generator(torch.nn.Module):
-    def __init__(self, count):
+    def __init__(self):
         super().__init__()
         self.layers = torch.nn.Sequential(
             torch.nn.Conv2d(3, 32, 1),
@@ -113,8 +113,8 @@ class TraVeLGAN(pytorch_lightning.LightningModule):
         opt_model.step()
         opt_encoder.step()
     def validation_step(self, batch, batch_index):
-        output = torch.stack((batch[0], self.model(batch[0])), 3)
-        output = torchvision.utils.make_grid(output.flatten(2, 3), 4, 0) / 2 + 0.5
+        output = torch.concat((batch[0], self.model(batch[0])), 2)
+        output = torchvision.utils.make_grid(output, 4, 0) / 2 + 0.5
         output = (output * 255).clamp(min=0, max=255).to(torch.uint8)
         os.makedirs("TraVeLGAN", exist_ok=True)
         path = f"TraVeLGAN/Image {self.global_step}.png"
