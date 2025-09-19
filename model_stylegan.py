@@ -86,10 +86,11 @@ class StyleGAN(pytorch_lightning.LightningModule):
         score, features = self.critic(fake)
         code = self.model.encoder(features)
         loss_fake = (score - 1).square().mean()
-        loss_info = 10 * (code - noise[:, :self.latent_dim]).square().mean()
+        loss_info = (code - noise[:, :self.latent_dim]).square().mean()
+        ratio = 150 * loss_fake.detach() / (50 * loss_info.detach() + 2)
         self.log("m_fake", loss_fake, True)
         self.log("m_info", loss_info, True)
-        self.manual_backward(loss_fake + loss_info)
+        self.manual_backward(loss_fake + ratio * loss_info)
         opt.step()
     def validation_step(self, batch, batch_index):
         output = self.model(batch[0])

@@ -33,8 +33,8 @@ if __name__ == "__main__":
         callbacks=[ModelCheckpoint(save_on_train_epoch_end=True)])
     checkpoint = None
     
-    base_path = "lightning_logs/version_0/checkpoints/"
-    checkpoint = base_path + os.listdir(base_path)[0]
+    # base_path = "lightning_logs/version_0/checkpoints/"
+    # checkpoint = base_path + os.listdir(base_path)[0]
 
     trainer.fit(
         model=adversarial, 
