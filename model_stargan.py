@@ -33,15 +33,10 @@ class Critic(torch.nn.Module):
         super().__init__()
         self.features = torch.nn.Sequential(
             spectral_norm(torch.nn.Conv2d(3, 32, 7, 2, 3)),
-            torch.nn.LeakyReLU(),
-            spectral_norm(torch.nn.Conv2d(32, 64, 4, 2, 1)),
-            torch.nn.LeakyReLU(),
-            spectral_norm(torch.nn.Conv2d(64, 128, 4, 2, 1)),
-            torch.nn.LeakyReLU(),
-            spectral_norm(torch.nn.Conv2d(128, 256, 4, 2, 1)),
-            torch.nn.LeakyReLU(),
-            spectral_norm(torch.nn.Conv2d(256, 512, 4, 2, 1)),
-            torch.nn.LeakyReLU())
+            DownBlock(32, 64, 1, True),
+            DownBlock(64, 128, 1, True),
+            DownBlock(128, 256, 1, True),
+            DownBlock(256, 512, 1, True))
         self.critic = torch.nn.Sequential(
             spectral_norm(torch.nn.Conv2d(512, 1, 4)),
             torch.nn.Flatten(1))

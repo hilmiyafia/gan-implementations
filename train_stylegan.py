@@ -4,18 +4,18 @@ import torch
 import pytorch_lightning
 from pytorch_lightning.utilities.combined_loader import CombinedLoader
 from utils import get_dataset, get_dataloader
-from stylegan import Generator, Critic, StyleGAN
+from model_stylegan import Generator, Critic, StyleGAN
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 if __name__ == "__main__":
-    EPOCHS = 20
+    EPOCHS = 1000
     VAL_SIZE = 16
     VAL_INTERVAL = 100
     BATCH_SIZE = 8
     LATENT_DIM = 8
     NOISE_DIM = 16
 
-    dataset, dataloader = get_dataset("../dataset/cats", BATCH_SIZE)
+    dataset, dataloader = get_dataset("../dataset/celeb", BATCH_SIZE)
     generator = torch.Generator()
     generator.manual_seed(0)
     val_dataset = torch.utils.data.TensorDataset(
@@ -33,8 +33,8 @@ if __name__ == "__main__":
         callbacks=[ModelCheckpoint(save_on_train_epoch_end=True)])
     checkpoint = None
     
-    # base_path = "lightning_logs/version_0/checkpoints/"
-    # checkpoint = base_path + os.listdir(base_path)[0]
+    base_path = "lightning_logs/version_0/checkpoints/"
+    checkpoint = base_path + os.listdir(base_path)[0]
 
     trainer.fit(
         model=adversarial, 

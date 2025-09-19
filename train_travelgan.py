@@ -4,7 +4,7 @@ import torch
 import pytorch_lightning
 from pytorch_lightning.utilities.combined_loader import CombinedLoader
 from utils import get_dataset, get_dataloader
-from travelgan import Generator, Critic, Encoder, TraVeLGAN
+from model_travelgan import Generator, Critic, Encoder, TraVeLGAN
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 if __name__ == "__main__":
