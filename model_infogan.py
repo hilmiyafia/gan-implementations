@@ -3,7 +3,7 @@ import os
 import torch
 import torchvision
 import pytorch_lightning
-from blocks import ResidualBlock, DownBlock, UpBlock
+from blocks import DownBlock, UpBlock
 from torch.nn.utils import spectral_norm
 
 class Generator(torch.nn.Module):
@@ -12,11 +12,11 @@ class Generator(torch.nn.Module):
         total_dim = latent_dim + noise_dim
         self.layers = torch.nn.Sequential(
             torch.nn.Linear(total_dim, 512),
-            torch.nn.SELU(),
+            torch.nn.Tanh(),
             torch.nn.Linear(512, 512),
-            torch.nn.SELU(),
+            torch.nn.Tanh(),
             torch.nn.Linear(512, 512),
-            torch.nn.SELU(),
+            torch.nn.Tanh(),
             torch.nn.Unflatten(1, (512, 1, 1)),
             torch.nn.ConvTranspose2d(512, 512, 8, groups=512),
             UpBlock(512, 256, 3),
@@ -82,7 +82,7 @@ class InfoGAN(pytorch_lightning.LightningModule):
         score, features = self.critic(fake)
         code = self.model.encoder(features)
         loss_fake = (score - 1).square().mean()
-        loss_info = 10 * (code - noise[:, :self.latent_dim]).square().mean()
+        loss_info = 40 * (code - noise[:, :self.latent_dim]).square().mean()
         self.log("m_fake", loss_fake, True)
         self.log("m_info", loss_info, True)
         self.manual_backward(loss_fake + loss_info)

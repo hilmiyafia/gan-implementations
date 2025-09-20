@@ -2,6 +2,7 @@
 import os
 import torch
 import pytorch_lightning
+from blocks import weights_init
 from pytorch_lightning.utilities.combined_loader import CombinedLoader
 from utils import get_dataset, get_dataloader
 from model_stargan import Generator, Critic, StarGAN
@@ -12,6 +13,7 @@ if __name__ == "__main__":
     VAL_SIZE = 8
     VAL_INTERVAL = 100
     BATCH_SIZE = 8
+
     dataset_a, dataloader_a = get_dataset("../dataset/cats", BATCH_SIZE)
     dataset_b, dataloader_b = get_dataset("../dataset/dogs", BATCH_SIZE)
     dataloader = CombinedLoader([dataloader_a, dataloader_b], "max_size_cycle")
@@ -21,6 +23,8 @@ if __name__ == "__main__":
 
     model = Generator(2)
     critic = Critic(2)
+    model.apply(weights_init)
+    critic.apply(weights_init)
     adversarial = StarGAN(model, critic)
 
     trainer = pytorch_lightning.Trainer(

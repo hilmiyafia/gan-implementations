@@ -2,13 +2,13 @@
 import os
 import torch
 import pytorch_lightning
-from pytorch_lightning.utilities.combined_loader import CombinedLoader
+from blocks import weights_init
 from utils import get_dataset, get_dataloader
 from model_stylegan import Generator, Critic, StyleGAN
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 if __name__ == "__main__":
-    EPOCHS = 1000
+    EPOCHS = 500
     VAL_SIZE = 16
     VAL_INTERVAL = 100
     BATCH_SIZE = 8
@@ -24,6 +24,8 @@ if __name__ == "__main__":
 
     model = Generator(LATENT_DIM, NOISE_DIM)
     critic = Critic()
+    model.apply(weights_init)
+    critic.apply(weights_init)
     adversarial = StyleGAN(model, critic, LATENT_DIM, NOISE_DIM)
 
     trainer = pytorch_lightning.Trainer(
@@ -33,8 +35,8 @@ if __name__ == "__main__":
         callbacks=[ModelCheckpoint(save_on_train_epoch_end=True)])
     checkpoint = None
     
-    # base_path = "lightning_logs/version_0/checkpoints/"
-    # checkpoint = base_path + os.listdir(base_path)[0]
+    base_path = "lightning_logs/version_0/checkpoints/"
+    checkpoint = base_path + os.listdir(base_path)[0]
 
     trainer.fit(
         model=adversarial, 

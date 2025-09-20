@@ -2,6 +2,7 @@
 import os
 import torch
 import pytorch_lightning
+from blocks import weights_init
 from pytorch_lightning.utilities.combined_loader import CombinedLoader
 from utils import get_dataset, get_dataloader
 from model_travelgan import Generator, Critic, Encoder, TraVeLGAN
@@ -12,6 +13,7 @@ if __name__ == "__main__":
     VAL_SIZE = 8
     VAL_INTERVAL = 100
     BATCH_SIZE = 8
+
     dataset_a, dataloader_a = get_dataset("../dataset/cats", BATCH_SIZE)
     dataset_b, dataloader_b = get_dataset("../dataset/dogs", BATCH_SIZE)
     dataloader = CombinedLoader([dataloader_a, dataloader_b], "max_size_cycle")
@@ -22,6 +24,9 @@ if __name__ == "__main__":
     model = Generator()
     encoder = Encoder()
     critic = Critic()
+    model.apply(weights_init)
+    encoder.apply(weights_init)
+    critic.apply(weights_init)
     adversarial = TraVeLGAN(model, encoder, critic)
 
     trainer = pytorch_lightning.Trainer(

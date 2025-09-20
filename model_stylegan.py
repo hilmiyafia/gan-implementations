@@ -14,13 +14,13 @@ class Generator(torch.nn.Module):
         get_style = lambda: self.style
         self.mapping = torch.nn.Sequential(
             torch.nn.Linear(total_dim, 512),
-            torch.nn.SELU(),
+            torch.nn.Tanh(),
             torch.nn.Linear(512, 512),
-            torch.nn.SELU(),
+            torch.nn.Tanh(),
             torch.nn.Unflatten(1, (512, 1, 1)))
         self.layers = torch.nn.Sequential(
             torch.nn.Conv2d(512, 512, 1),
-            torch.nn.SELU(),
+            torch.nn.Tanh(),
             torch.nn.ConvTranspose2d(512, 512, 8, groups=512),
             StyleUpBlock(512, 256, get_style, 3),
             StyleUpBlock(256, 128, get_style, 3),
@@ -86,11 +86,10 @@ class StyleGAN(pytorch_lightning.LightningModule):
         score, features = self.critic(fake)
         code = self.model.encoder(features)
         loss_fake = (score - 1).square().mean()
-        loss_info = (code - noise[:, :self.latent_dim]).square().mean()
-        ratio = 150 * loss_fake.detach() / (50 * loss_info.detach() + 2)
+        loss_info = 40 * (code - noise[:, :self.latent_dim]).square().mean()
         self.log("m_fake", loss_fake, True)
         self.log("m_info", loss_info, True)
-        self.manual_backward(loss_fake + ratio * loss_info)
+        self.manual_backward(loss_fake + loss_info)
         opt.step()
     def validation_step(self, batch, batch_index):
         output = self.model(batch[0])

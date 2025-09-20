@@ -2,13 +2,13 @@
 import os
 import torch
 import pytorch_lightning
-from pytorch_lightning.utilities.combined_loader import CombinedLoader
+from blocks import weights_init
 from utils import get_dataset, get_dataloader
 from model_infogan import Generator, Critic, InfoGAN
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 if __name__ == "__main__":
-    EPOCHS = 100
+    EPOCHS = 500
     VAL_SIZE = 16
     VAL_INTERVAL = 100
     BATCH_SIZE = 8
@@ -24,6 +24,8 @@ if __name__ == "__main__":
 
     model = Generator(LATENT_DIM, NOISE_DIM)
     critic = Critic()
+    model.apply(weights_init)
+    critic.apply(weights_init)
     adversarial = InfoGAN(model, critic, LATENT_DIM, NOISE_DIM)
 
     trainer = pytorch_lightning.Trainer(
