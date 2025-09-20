@@ -29,7 +29,7 @@ class StyleResidualBlock(torch.nn.Module):
             norm(torch.nn.Conv2d(dim, dim, 3, padding=1)),
             torch.nn.Tanh(),
             norm(torch.nn.Conv2d(dim, dim, 3, padding=1, bias=False)))
-        self.b_network = torch.nn.Parameter(torch.ones(1, dim, 1, 1))
+        self.b_network = torch.nn.Parameter(torch.zeros(1, dim, 1, 1))
         self.norm = torch.nn.InstanceNorm2d(dim)
         self.a_network = torch.nn.Sequential(
             torch.nn.Conv2d(512, 512, 1),
