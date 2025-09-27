@@ -10,6 +10,7 @@ class Dataset(torch.utils.data.Dataset):
         self.paths.sort()
         self.norm = torchvision.transforms.v2.ToDtype(torch.float32, True)
         self.flip = torchvision.transforms.v2.RandomHorizontalFlip()
+        self.noise = torchvision.transforms.v2.GaussianNoise(0, 2 / 256, False)
     def __len__(self):
         return len(self.paths)
     def resize(self, x):
@@ -17,7 +18,7 @@ class Dataset(torch.utils.data.Dataset):
             x[None], (128, 128), mode="area")[0]
     def __getitem__(self, index):
         image = torchvision.io.read_image(self.paths[index])
-        return self.resize(self.flip(self.norm(image)) * 2 - 1)
+        return self.resize(self.noise(self.flip(self.norm(image))) * 2 - 1)
     def get_unflipped(self, index):
         image = torchvision.io.read_image(self.paths[index])
         return self.resize(self.norm(image) * 2 - 1)

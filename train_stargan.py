@@ -2,7 +2,6 @@
 import os
 import torch
 import pytorch_lightning
-from blocks import weights_init
 from pytorch_lightning.utilities.combined_loader import CombinedLoader
 from utils import get_dataset, get_dataloader
 from model_stargan import Generator, Critic, StarGAN
@@ -23,8 +22,6 @@ if __name__ == "__main__":
 
     model = Generator(2)
     critic = Critic(2)
-    model.apply(weights_init)
-    critic.apply(weights_init)
     adversarial = StarGAN(model, critic)
 
     trainer = pytorch_lightning.Trainer(

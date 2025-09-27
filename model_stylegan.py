@@ -10,29 +10,30 @@ class Generator(torch.nn.Module):
     def __init__(self, latent_dim, noise_dim):
         super().__init__()
         total_dim = latent_dim + noise_dim
-        self.style = None
-        get_style = lambda: self.style
+        self.styles = {}
         self.mapping = torch.nn.Sequential(
             torch.nn.Linear(total_dim, 512),
-            torch.nn.Tanh(),
+            torch.nn.LeakyReLU(),
             torch.nn.Linear(512, 512),
-            torch.nn.Tanh(),
+            torch.nn.LeakyReLU(),
             torch.nn.Unflatten(1, (512, 1, 1)))
+        self.base = torch.nn.Parameter(torch.randn(1, 512, 8, 8))
         self.layers = torch.nn.Sequential(
-            torch.nn.Conv2d(512, 512, 1),
-            torch.nn.Tanh(),
-            torch.nn.ConvTranspose2d(512, 512, 8, groups=512),
-            StyleUpBlock(512, 256, get_style, 3),
-            StyleUpBlock(256, 128, get_style, 3),
-            StyleUpBlock(128, 64, get_style, 3),
-            StyleUpBlock(64, 32, get_style, 3),
+            StyleUpBlock(512, 256, lambda: self.styles[0], 3),
+            StyleUpBlock(256, 128, lambda: self.styles[1], 3),
+            StyleUpBlock(128, 64, lambda: self.styles[2], 3),
+            StyleUpBlock(64, 32, lambda: self.styles[3], 3),
             torch.nn.Conv2d(32, 3, 1))
         self.encoder = torch.nn.Sequential(
             torch.nn.Conv2d(512, latent_dim, 4),
             torch.nn.Flatten(1))
     def forward(self, x):
-        self.style = self.mapping(x)
-        return self.layers(self.style)
+        style = self.mapping(x)
+        for i in range(4): self.styles[i] = style
+        return self.layers(self.base.repeat(x.shape[0], 1, 1, 1))
+    def generate_with_styles(self, xs):
+        for i in range(4): self.styles[i] = self.mapping(xs[i])
+        return self.layers(self.base.repeat(xs[0].shape[0], 1, 1, 1))
 
 class Critic(torch.nn.Module):
     def __init__(self):
@@ -59,18 +60,30 @@ class StyleGAN(pytorch_lightning.LightningModule):
         self.total_dim = latent_dim + noise_dim
         self.latent_dim = latent_dim
     def configure_optimizers(self):
-        return [
+        optimizers = [
             torch.optim.AdamW(self.model.parameters(), 6e-5, [0.5, 0.9]),
             torch.optim.AdamW(self.critic.parameters(), 6e-5, [0.5, 0.9])]
+        schedulers = [
+            torch.optim.lr_scheduler.LinearLR(optimizers[0], 1, 1e-1, 750),
+            torch.optim.lr_scheduler.LinearLR(optimizers[1], 1, 1e-1, 750)]
+        return optimizers, schedulers
     def training_step(self, batch, batch_idx):
+        model_opt, critic_opt = self.optimizers()
         if batch_idx % 2 == 0:
-            self.train_critic(batch)
+            self.train_critic(batch, critic_opt)
         else:
-            self.train_model(batch)
-    def train_critic(self, batch):
-        _, opt = self.optimizers()
+            self.train_model(batch, model_opt)
+    def on_train_epoch_start(self):
+        print(
+            "\nEpoch:", self.current_epoch, 
+            "LR:", self.lr_schedulers()[0].get_lr()[0])
+    def on_train_epoch_end(self):
+        schedulers = self.lr_schedulers()
+        schedulers[0].step()
+        schedulers[1].step()
+    def train_critic(self, batch, opt):
         opt.zero_grad()
-        noise = torch.randn(batch.shape[0], self.total_dim, device=batch.device)
+        noise = torch.randn(batch.shape[0], self.total_dim).to(batch.device)
         fake = self.model(noise)
         loss_fake = (self.critic(fake)[0] + 1).square().mean()
         loss_real = (self.critic(batch)[0] - 1).square().mean()
@@ -78,15 +91,14 @@ class StyleGAN(pytorch_lightning.LightningModule):
         self.log("c_real", loss_real, True)
         self.manual_backward(loss_fake + loss_real)
         opt.step()
-    def train_model(self, batch):
-        opt, _ = self.optimizers()
+    def train_model(self, batch, opt):
         opt.zero_grad()
-        noise = torch.randn(batch.shape[0], self.total_dim, device=batch.device)
+        noise = torch.randn(batch.shape[0], self.total_dim).to(batch.device)
         fake = self.model(noise)
         score, features = self.critic(fake)
         code = self.model.encoder(features)
-        loss_fake = (score - 1).square().mean()
-        loss_info = 40 * (code - noise[:, :self.latent_dim]).square().mean()
+        loss_fake = score.square().mean()
+        loss_info = 50 * (code - noise[:, :self.latent_dim]).square().mean()
         self.log("m_fake", loss_fake, True)
         self.log("m_info", loss_info, True)
         self.manual_backward(loss_fake + loss_info)

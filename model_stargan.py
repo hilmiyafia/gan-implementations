@@ -92,7 +92,7 @@ class StarGAN(pytorch_lightning.LightningModule):
         fake = self.model(batch, c_target)
         output = self.model(fake, c_source)
         score_fake, score_class = self.critic(fake)
-        loss_fake = (score_fake - 1).square().mean()
+        loss_fake = score_fake.square().mean()
         loss_class = self.loss(score_class, c_target)
         loss_output = 100 * (output - batch).square().mean()
         self.log("m_fake", loss_fake, True)
